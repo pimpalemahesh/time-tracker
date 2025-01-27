@@ -116,3 +116,51 @@ Project Link: [https://github.com/pimpalemahesh/time-tracker](https://github.com
 Topics: django, time-tracking, project-management, analytics, bootstrap, chartjs
 Description: A modern Django-based time tracking application with real-time tracking, beautiful analytics, and dark mode support. Track work hours across projects and companies with an intuitive interface and interactive visualizations. 🚀
 
+# Time Tracker v1.0.0
+
+First stable release of Time Tracker - A modern Django-based time tracking application.
+
+## ✨ Features
+
+### Core Functionality
+- ⏱️ Real-time time tracking
+- 📊 Project and company organization
+- 🏷️ Tag-based task management
+- 📈 Interactive analytics dashboard
+
+### UI/UX
+- 🌓 Dark/Light mode support
+- 📱 Responsive design
+- 📊 Interactive charts
+- 🎨 Modern, clean interface
+
+### Analytics
+- 📅 7/30/90 days view options
+- 📊 Project distribution charts
+- 🏢 Company-wise analytics
+- 🏷️ Tag usage statistics
+
+## 🔧 Technical Details
+
+- Django 5.1.5
+- Python 3.11
+- Bootstrap 5
+- Chart.js
+- Select2
+- SQLite database
+
+## 🚀 Installation
+
+Detailed installation instructions are available in the README.md
+
+## 🐛 Known Issues
+
+None reported
+
+## 🔜 Future Updates
+
+- User authentication
+- Export functionality
+- Team collaboration features
+- API endpoints
+
