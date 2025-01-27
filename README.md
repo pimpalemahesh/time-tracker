@@ -104,7 +104,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-Project Link: [https://github.com/your-username/time-tracker](https://github.com/your-username/time-tracker)
+Project Link: [https://github.com/pimpalemahesh/time-tracker](https://github.com/pimpalemahesh/time-tracker)
 
 ## 🙏 Acknowledgments
 
