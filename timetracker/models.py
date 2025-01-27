@@ -17,12 +17,11 @@ class Company(models.Model):
 
 class Project(models.Model):
     name = models.CharField(max_length=200)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='projects')
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"{self.name} ({self.company.name})"
+        return self.name
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -33,6 +32,7 @@ class Tag(models.Model):
 
 class TimeEntry(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     description = models.TextField()
     tags = models.ManyToManyField(Tag, blank=True)
@@ -40,16 +40,18 @@ class TimeEntry(models.Model):
     end_time = models.DateTimeField(null=True, blank=True)
     
     def clean(self):
-        # Check if there's an active time entry for this project
+        # Check if there's an active time entry for this project and company combination
         if not self.end_time:  # If this is an active entry
             active_entry = TimeEntry.objects.filter(
                 project=self.project,
+                company=self.company,  # Add company to the filter
                 end_time__isnull=True
             ).exclude(id=self.id).first()
             
             if active_entry:
                 raise ValidationError(
-                    f'There is already an active time entry for project "{self.project.name}". '
+                    f'There is already an active time entry for project "{self.project.name}" '
+                    f'with company "{self.company.name}". '
                     f'Please stop the current timer before starting a new one.'
                 )
     
