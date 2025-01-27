@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-4 mb-0">Time Tracking Dashboard</h1>
+            <p class="text-light opacity-75">Track your project time efficiently</p>
+        </div>
+        <div class="col-md-4 text-end d-flex align-items-center justify-content-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#timerModal">
+                <i class="fas fa-play me-2"></i>Start Timer
+            </button>
+        </div>
+    </div>
+
+    <!-- Add this after the navbar -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h3 class="h5 mb-3"><i class="fas fa-clock me-2"></i>Total Hours Today</h3>
+                <h2 class="mb-0">8.5h</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h3 class="h5 mb-3"><i class="fas fa-project-diagram me-2"></i>Active Projects</h3>
+                <h2 class="mb-0">{{ time_entries.count }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h3 class="h5 mb-3"><i class="fas fa-building me-2"></i>Companies</h3>
+                <h2 class="mb-0">{{ companies.count }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="mb-0">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <label class="form-label">Filter by Company</label>
+                    </div>
+                    <div class="col-md-9">
+                        <select name="company" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Companies</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}" {% if selected_company == company.id|stringformat:"i" %}selected{% endif %}>
+                                {{ company.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Time Entries Table -->
+    <div class="card">
+        <div class="card-body">
+            <h3 class="h4 mb-4">Recent Time Entries</h3>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Description</th>
+                            <th>Tags</th>
+                            <th>Start Time</th>
+                            <th>Duration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in time_entries %}
+                        <tr>
+                            <td>
+                                <i class="fas fa-folder me-2"></i>
+                                {{ entry.project.name }}
+                            </td>
+                            <td>{{ entry.description }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ entry.tags }}</span>
+                            </td>
+                            <td>
+                                <i class="far fa-clock me-2"></i>
+                                {{ entry.start_time|date:"M d, Y H:i" }}
+                            </td>
+                            <td>{{ entry.duration }}</td>
+                            <td>
+                                {% if not entry.end_time %}
+                                <a href="{% url 'stop_timer' entry.id %}" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-stop"></i> Stop
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timer Modal -->
+<div class="modal fade" id="timerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-play me-2"></i>Start New Timer
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'start_timer' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label d-flex justify-content-between">
+                            Project
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#projectModal" class="text-primary">
+                                <i class="fas fa-plus-circle"></i> Add New
+                            </a>
+                        </label>
+                        {{ form.project }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label d-flex justify-content-between">
+                            Tags
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#tagModal" class="text-primary">
+                                <i class="fas fa-plus-circle"></i> Add New
+                            </a>
+                        </label>
+                        {{ form.tags }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-play me-2"></i>Start Timer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal fade" id="projectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Project</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'add_project' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label d-flex justify-content-between">
+                            Company
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#companyModal" class="text-primary">
+                                <i class="fas fa-plus-circle"></i> Add New Company
+                            </a>
+                        </label>
+                        {{ project_form.company }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Project Name</label>
+                        {{ project_form.name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ project_form.description }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Save Project
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Company Modal -->
+<div class="modal fade" id="companyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-building me-2"></i>Add New Company
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'add_company' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Company Name</label>
+                        {{ company_form.name }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Save Company
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this modal for tags -->
+<div class="modal fade" id="tagModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tag me-2"></i>Add New Tag
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'add_tag' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Tag Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Color</label>
+                        <input type="color" name="color" class="form-control form-control-color" value="#6366f1">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Save Tag
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
