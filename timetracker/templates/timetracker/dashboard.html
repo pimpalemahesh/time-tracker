@@ -2,156 +2,131 @@
 {% load timetracker_filters %}
 
 {% block content %}
-<div class="container">
-    <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="display-4 mb-0">Time Tracking Dashboard</h1>
-            <p class="text-light opacity-75">Track your project time efficiently</p>
-        </div>
-        <div class="col-md-4 text-end d-flex align-items-center justify-content-end">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#timerModal">
-                <i class="fas fa-play me-2"></i>Start Timer
-            </button>
-        </div>
-    </div>
-
-    <!-- Add this after the navbar -->
-    {% if messages %}
-    <div class="container mt-3">
-        {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- Stats Cards -->
-    <div class="row mb-4">
+<div class="container py-4">
+    <!-- Header with Stats -->
+    <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="stats-card">
-                <h3 class="h5 mb-3"><i class="fas fa-clock me-2"></i>Total Hours Today</h3>
-                <h2 class="mb-0">{{ time_entries|total_hours_today }}</h2>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stats-card">
-                <h3 class="h5 mb-3"><i class="fas fa-project-diagram me-2"></i>Active Projects</h3>
-                <h2 class="mb-0">{{ time_entries.count }}</h2>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stats-card">
-                <h3 class="h5 mb-3"><i class="fas fa-building me-2"></i>Companies</h3>
-                <h2 class="mb-0">{{ companies.count }}</h2>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add this after the stats cards and before the company filter -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Company</label>
-                    <select name="company" class="form-select">
-                        <option value="">All Companies</option>
-                        {% for company in companies %}
-                        <option value="{{ company.id }}" {% if selected_company == company.id|stringformat:"i" %}selected{% endif %}>
-                            {{ company.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Date Range</label>
-                    <select name="date_range" class="form-select">
-                        <option value="">All Time</option>
-                        <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
-                        <option value="yesterday" {% if date_range == 'yesterday' %}selected{% endif %}>Yesterday</option>
-                        <option value="this_week" {% if date_range == 'this_week' %}selected{% endif %}>This Week</option>
-                        <option value="last_week" {% if date_range == 'last_week' %}selected{% endif %}>Last Week</option>
-                        <option value="this_month" {% if date_range == 'this_month' %}selected{% endif %}>This Month</option>
-                        <option value="last_month" {% if date_range == 'last_month' %}selected{% endif %}>Last Month</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All Status</option>
-                        <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
-                        <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <div class="d-flex gap-2 w-100">
-                        <button type="submit" class="btn btn-primary flex-grow-1">
-                            <i class="fas fa-filter me-2"></i>Apply Filters
-                        </button>
-                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
-                            <i class="fas fa-times me-2"></i>Clear
-                        </a>
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50">Total Hours Today</h6>
+                            <h3 class="mb-0">{{ time_entries|total_hours_today }}</h3>
+                        </div>
+                        <div class="text-white-50">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
                     </div>
                 </div>
-            </form>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50">Active Projects</h6>
+                            <h3 class="mb-0">{{ projects|length }}</h3>
+                        </div>
+                        <div class="text-white-50">
+                            <i class="fas fa-folder fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50">Active Companies</h6>
+                            <h3 class="mb-0">{{ companies|length }}</h3>
+                        </div>
+                        <div class="text-white-50">
+                            <i class="fas fa-building fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Time Entries Table -->
-    <div class="card">
+    <!-- Timer History Table -->
+    <div class="card shadow-sm mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="h4 mb-0">Recent Time Entries</h3>
-                {% if time_entries %}
-                <div class="btn-group">
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#clearEntriesModal">
-                        <i class="fas fa-trash me-2"></i>Clear All Entries
-                    </button>
-                </div>
-                {% endif %}
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-history me-2 text-primary"></i>Time Entries
+                </h4>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#timerModal">
+                    <i class="fas fa-plus me-2"></i>Start New Timer
+                </button>
             </div>
+            
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
+                <table class="table table-hover align-middle bg-white rounded">
+                    <thead class="bg-light">
                         <tr>
-                            <th>Project</th>
-                            <th>Company</th>
-                            <th>Description</th>
-                            <th>Tags</th>
-                            <th>Started</th>
-                            <th>Duration</th>
-                            <th>Actions</th>
+                            <th class="border-0">Project</th>
+                            <th class="border-0">Company</th>
+                            <th class="border-0">Description</th>
+                            <th class="border-0">Tags</th>
+                            <th class="border-0">Started</th>
+                            <th class="border-0">Duration</th>
+                            <th class="border-0">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for entry in time_entries %}
-                        <tr>
+                        <tr {% if not entry.end_time %}class="table-active"{% endif %}>
                             <td>
-                                <i class="fas fa-folder me-2"></i>
-                                {{ entry.project.name }}
-                            </td>
-                            <td>{{ entry.company.name }}</td>
-                            <td>{{ entry.description }}</td>
-                            <td>
-                                {% for tag in entry.tags.all %}
-                                    <span class="badge" style="background-color: {{ tag.color }}">{{ tag.name }}</span>
-                                {% endfor %}
+                                <div class="d-flex align-items-center">
+                                    <span class="icon-circle bg-primary bg-opacity-10 me-2">
+                                        <i class="fas fa-folder text-primary"></i>
+                                    </span>
+                                    <span>{{ entry.project.name }}</span>
+                                </div>
                             </td>
                             <td>
-                                <i class="far fa-clock me-2"></i>
-                                {{ entry.start_time|date:"M d, Y H:i" }}
+                                <div class="d-flex align-items-center">
+                                    <span class="icon-circle bg-info bg-opacity-10 me-2">
+                                        <i class="fas fa-building text-info"></i>
+                                    </span>
+                                    <span>{{ entry.company.name }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-wrap" style="max-width: 200px;">
+                                    {{ entry.description }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for tag in entry.tags.all %}
+                                        <span class="badge" style="background-color: {{ tag.color }}">
+                                            {{ tag.name }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="icon-circle bg-success bg-opacity-10 me-2">
+                                        <i class="far fa-clock text-success"></i>
+                                    </span>
+                                    {{ entry.start_time|date:"M d, Y H:i" }}
+                                </div>
                             </td>
                             <td>{{ entry.duration|format_duration }}</td>
                             <td>
-                                <div class="btn-group gap-2">
+                                <div class="btn-group">
                                     {% if not entry.end_time %}
                                     <a href="{% url 'stop_timer' entry.id %}" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-stop"></i> Stop
+                                        <i class="fas fa-stop"></i>
                                     </a>
                                     {% endif %}
-                                    <button type="button" class="btn btn-danger btn-sm" 
+                                    <button type="button" class="btn btn-outline-danger btn-sm ms-2" 
                                             onclick="confirmDelete('{% url 'delete_entry' entry.id %}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -160,14 +135,101 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-4">
-                                <i class="fas fa-clock fa-2x mb-3 d-block text-muted"></i>
-                                No time entries found
+                            <td colspan="7" class="text-center py-5">
+                                <div class="text-muted">
+                                    <div class="empty-state">
+                                        <i class="fas fa-clock fa-3x mb-3 text-primary opacity-50"></i>
+                                        <h5>No time entries found</h5>
+                                        <p class="text-muted">Start tracking your time by clicking the "Start New Timer" button.</p>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <span class="icon-circle bg-primary bg-opacity-10 me-2">
+                            <i class="fas fa-tags text-primary"></i>
+                        </span>
+                        Recent Tags
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for tag in tags %}
+                            <span class="badge" style="background-color: {{ tag.color }}">
+                                {{ tag.name }}
+                            </span>
+                        {% empty %}
+                            <div class="empty-state text-center w-100">
+                                <i class="fas fa-tags fa-2x mb-2 text-primary opacity-50"></i>
+                                <p class="text-muted">No tags created yet</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <span class="icon-circle bg-info bg-opacity-10 me-2">
+                            <i class="fas fa-folder text-info"></i>
+                        </span>
+                        Recent Projects
+                    </h5>
+                    <div class="list-group list-group-flush">
+                        {% for project in projects|slice:":5" %}
+                            <div class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                <span class="icon-circle bg-info bg-opacity-10 me-2">
+                                    <i class="fas fa-folder text-info"></i>
+                                </span>
+                                {{ project.name }}
+                            </div>
+                        {% empty %}
+                            <div class="empty-state text-center">
+                                <i class="fas fa-folder fa-2x mb-2 text-info opacity-50"></i>
+                                <p class="text-muted">No projects created yet</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <span class="icon-circle bg-success bg-opacity-10 me-2">
+                            <i class="fas fa-building text-success"></i>
+                        </span>
+                        Recent Companies
+                    </h5>
+                    <div class="list-group list-group-flush">
+                        {% for company in companies|slice:":5" %}
+                            <div class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                <span class="icon-circle bg-success bg-opacity-10 me-2">
+                                    <i class="fas fa-building text-success"></i>
+                                </span>
+                                {{ company.name }}
+                            </div>
+                        {% empty %}
+                            <div class="empty-state text-center">
+                                <i class="fas fa-building fa-2x mb-2 text-success opacity-50"></i>
+                                <p class="text-muted">No companies created yet</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -177,9 +239,9 @@
 <div class="modal fade" id="timerModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-play me-2"></i>Start New Timer
+                    <i class="fas fa-play me-2"></i>Start Timer
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -190,7 +252,7 @@
                         <label class="form-label d-flex justify-content-between">
                             Company
                             <a href="#" data-bs-toggle="modal" data-bs-target="#companyModal" class="text-primary">
-                                <i class="fas fa-plus-circle"></i> Add New Company
+                                <i class="fas fa-plus-circle"></i> Add New
                             </a>
                         </label>
                         {{ form.company }}
@@ -200,7 +262,7 @@
                         <label class="form-label d-flex justify-content-between">
                             Project
                             <a href="#" data-bs-toggle="modal" data-bs-target="#projectModal" class="text-primary">
-                                <i class="fas fa-plus-circle"></i> Add New Project
+                                <i class="fas fa-plus-circle"></i> Add New
                             </a>
                         </label>
                         {{ form.project }}
@@ -215,13 +277,13 @@
                         <label class="form-label d-flex justify-content-between">
                             Tags
                             <a href="#" data-bs-toggle="modal" data-bs-target="#tagModal" class="text-primary">
-                                <i class="fas fa-plus-circle"></i> Add New Tag
+                                <i class="fas fa-plus-circle"></i> Add New
                             </a>
                         </label>
                         {{ form.tags }}
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100" id="startTimerBtn">
+                    <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-play me-2"></i>Start Timer
                     </button>
                 </form>
@@ -353,4 +415,43 @@
         </div>
     </div>
 </div>
+
+<!-- Add this CSS to your base.html or in a style tag -->
+<style>
+    .icon-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+
+    .empty-state {
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .list-group-item {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+
+    .list-group-item:hover {
+        background-color: rgba(37, 99, 235, 0.05);
+        transform: translateX(5px);
+    }
+
+    .table {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .table thead th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+</style>
 {% endblock %} 

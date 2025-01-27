@@ -27,6 +27,21 @@ def format_duration(td):
     return " ".join(parts)
 
 @register.filter
+def hours_to_duration(hours):
+    """Convert hours (float) to human-readable duration"""
+    total_minutes = int(hours * 60)
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    
+    parts = []
+    if hours > 0:
+        parts.append(f"{hours}h")
+    if minutes > 0 or not parts:
+        parts.append(f"{minutes}m")
+        
+    return " ".join(parts)
+
+@register.filter
 def total_hours_today(time_entries):
     from django.utils import timezone
     import pytz
