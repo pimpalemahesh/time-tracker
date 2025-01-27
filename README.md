@@ -113,3 +113,6 @@ Project Link: [https://github.com/pimpalemahesh/time-tracker](https://github.com
 * [Font Awesome](https://fontawesome.com)
 * [Select2](https://select2.org/)
 
+Topics: django, time-tracking, project-management, analytics, bootstrap, chartjs
+Description: A modern Django-based time tracking application with real-time tracking, beautiful analytics, and dark mode support. Track work hours across projects and companies with an intuitive interface and interactive visualizations. 🚀
+
