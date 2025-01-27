@@ -7,6 +7,9 @@ from .forms import TimeEntryForm, ProjectForm, CompanyForm
 from datetime import datetime, timedelta
 from django.db.models import Q
 from django.http import JsonResponse
+from django.db.models import Sum, Count, F, ExpressionWrapper, fields, FloatField
+from django.db.models.functions import TruncDate, ExtractSecond
+from django.db.models import Case, When
 
 # Create your views here.
 
@@ -147,3 +150,122 @@ def get_company_projects(request):
         projects = Project.objects.filter(company_id=company_id).values('id', 'name')
         return JsonResponse(list(projects), safe=False)
     return JsonResponse([], safe=False)
+
+def summary(request):
+    # Get time range from request
+    time_range = request.GET.get('range', '30')  # Default to 30 days
+    end_date = timezone.now()
+    
+    # Set start date based on selected range
+    if time_range == '7':
+        start_date = end_date - timedelta(days=7)
+    elif time_range == '90':
+        start_date = end_date - timedelta(days=90)
+    else:  # Default to 30 days
+        start_date = end_date - timedelta(days=30)
+    
+    # Calculate duration in seconds
+    duration_expression = ExpressionWrapper(
+        Case(
+            When(end_time__isnull=False, 
+                 then=ExpressionWrapper(
+                     F('end_time') - F('start_time'),
+                     output_field=fields.DurationField()
+                 )),
+            default=ExpressionWrapper(
+                timezone.now() - F('start_time'),
+                output_field=fields.DurationField()
+            ),
+            output_field=fields.DurationField(),
+        ),
+        output_field=fields.DurationField()
+    )
+
+    # Daily time entries
+    daily_entries = TimeEntry.objects.filter(
+        start_time__gte=start_date,
+        start_time__lte=end_date
+    ).annotate(
+        date=TruncDate('start_time'),
+        duration=duration_expression
+    ).values('date', 'duration')
+
+    # Process daily entries to calculate hours
+    daily_hours_dict = {}
+    for entry in daily_entries:
+        date = entry['date']
+        duration = entry['duration']
+        if date not in daily_hours_dict:
+            daily_hours_dict[date] = 0
+        daily_hours_dict[date] += duration.total_seconds() / 3600
+
+    # Fill in missing dates with zero hours
+    daily_hours = []
+    current_date = start_date.date()
+    while current_date <= end_date.date():
+        daily_hours.append({
+            'date': current_date,
+            'total_hours': round(daily_hours_dict.get(current_date, 0), 2)
+        })
+        current_date += timedelta(days=1)
+
+    # Project distribution
+    project_entries = TimeEntry.objects.filter(
+        start_time__gte=start_date
+    ).annotate(
+        duration=duration_expression
+    ).values('project__name', 'duration')
+
+    project_hours = {}
+    for entry in project_entries:
+        name = entry['project__name']
+        duration = entry['duration']
+        if name not in project_hours:
+            project_hours[name] = 0
+        project_hours[name] += duration.total_seconds() / 3600
+
+    project_hours = [
+        {'project__name': name, 'total_hours': round(hours, 2)}
+        for name, hours in project_hours.items()
+    ]
+    project_hours.sort(key=lambda x: x['total_hours'], reverse=True)
+
+    # Company distribution
+    company_entries = TimeEntry.objects.filter(
+        start_time__gte=start_date
+    ).annotate(
+        duration=duration_expression
+    ).values('company__name', 'duration')
+
+    company_hours = {}
+    for entry in company_entries:
+        name = entry['company__name']
+        duration = entry['duration']
+        if name not in company_hours:
+            company_hours[name] = 0
+        company_hours[name] += duration.total_seconds() / 3600
+
+    company_hours = [
+        {'company__name': name, 'total_hours': round(hours, 2)}
+        for name, hours in company_hours.items()
+    ]
+    company_hours.sort(key=lambda x: x['total_hours'], reverse=True)
+
+    # Tag distribution
+    tag_usage = TimeEntry.objects.filter(
+        start_time__gte=start_date
+    ).values('tags__name', 'tags__color').annotate(
+        entry_count=Count('id')
+    ).order_by('-entry_count')
+    
+    context = {
+        'daily_hours': daily_hours,
+        'project_hours': project_hours,
+        'company_hours': company_hours,
+        'tag_usage': tag_usage,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_range': time_range,
+    }
+    
+    return render(request, 'timetracker/summary.html', context)

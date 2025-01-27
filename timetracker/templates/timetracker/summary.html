@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load timetracker_filters %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Time Tracking Summary</h2>
+        <div class="btn-group">
+            <a href="{% url 'summary' %}?range=7" 
+               class="btn btn-{% if selected_range == '7' %}primary{% else %}outline-primary{% endif %}">
+                Last 7 Days
+            </a>
+            <a href="{% url 'summary' %}?range=30" 
+               class="btn btn-{% if selected_range == '30' %}primary{% else %}outline-primary{% endif %}">
+                Last 30 Days
+            </a>
+            <a href="{% url 'summary' %}?range=90" 
+               class="btn btn-{% if selected_range == '90' %}primary{% else %}outline-primary{% endif %}">
+                Last 90 Days
+            </a>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Daily Hours Chart -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Daily Hours</h5>
+                    <div style="height: 300px;"> <!-- Fixed height container -->
+                        <canvas id="dailyHoursChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project and Company Charts Row -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Projects</h5>
+                    <div style="height: 300px;"> <!-- Fixed height container -->
+                        <canvas id="projectChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Companies</h5>
+                    <div style="height: 300px;"> <!-- Fixed height container -->
+                        <canvas id="companyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row g-4">
+        <!-- Tag Usage -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tag Usage</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for tag in tag_usage %}
+                            {% if tag.tags__name %}
+                                <span class="badge" style="background-color: {{ tag.tags__color }}">
+                                    {{ tag.tags__name }} ({{ tag.entry_count }})
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Summary Statistics</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Total Projects:</strong> 
+                            {{ project_hours|length }}
+                        </li>
+                        <li class="mb-2">
+                            <strong>Total Companies:</strong> 
+                            {{ company_hours|length }}
+                        </li>
+                        <li class="mb-2">
+                            <strong>Total Tags:</strong> 
+                            {{ tag_usage|length }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Daily Hours Chart
+    const dailyCtx = document.getElementById('dailyHoursChart').getContext('2d');
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for entry in daily_hours %}'{{ entry.date|date:"M d" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Hours',
+                data: [{% for entry in daily_hours %}{{ entry.total_hours }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                borderColor: '#6366f1',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const hours = context.raw;
+                            const totalMinutes = Math.round(hours * 60);
+                            const h = Math.floor(totalMinutes / 60);
+                            const m = totalMinutes % 60;
+                            let label = '';
+                            if (h > 0) label += h + 'h ';
+                            if (m > 0 || !label) label += m + 'm';
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            const totalMinutes = Math.round(value * 60);
+                            const h = Math.floor(totalMinutes / 60);
+                            const m = totalMinutes % 60;
+                            let label = '';
+                            if (h > 0) label += h + 'h ';
+                            if (m > 0 || !label) label += m + 'm';
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Project Distribution Chart
+    const projectCtx = document.getElementById('projectChart').getContext('2d');
+    new Chart(projectCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for proj in project_hours %}'{{ proj.project__name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for proj in project_hours %}{{ proj.total_hours }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [
+                    '#6366f1',
+                    '#8b5cf6',
+                    '#ec4899',
+                    '#14b8a6',
+                    '#f59e0b'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const hours = context.raw;
+                            const totalMinutes = Math.round(hours * 60);
+                            const h = Math.floor(totalMinutes / 60);
+                            const m = totalMinutes % 60;
+                            let label = context.label + ': ';
+                            if (h > 0) label += h + 'h ';
+                            if (m > 0 || !label) label += m + 'm';
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Company Distribution Chart
+    const companyCtx = document.getElementById('companyChart').getContext('2d');
+    new Chart(companyCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for comp in company_hours %}'{{ comp.company__name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for comp in company_hours %}{{ comp.total_hours }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [
+                    '#6366f1',
+                    '#8b5cf6',
+                    '#ec4899',
+                    '#14b8a6',
+                    '#f59e0b'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const hours = context.raw;
+                            const totalMinutes = Math.round(hours * 60);
+                            const h = Math.floor(totalMinutes / 60);
+                            const m = totalMinutes % 60;
+                            let label = context.label + ': ';
+                            if (h > 0) label += h + 'h ';
+                            if (m > 0 || !label) label += m + 'm';
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
