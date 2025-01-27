@@ -130,11 +130,174 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Initialize Select2 for all dropdowns
             $('.select2').select2({
                 theme: 'bootstrap-5',
                 dropdownParent: $('#timerModal')
             });
+
+            // Handle project form submission
+            $('#projectForm').on('submit', function(e) {
+                e.preventDefault();
+                const formData = $(this).serialize();
+                
+                $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        // Add new project to project select dropdown
+                        const newOption = new Option(response.name, response.id, true, true);
+                        $('select[name="project"]').append(newOption).trigger('change');
+                        
+                        // Close modal and reset form
+                        $('#projectModal').modal('hide');
+                        $('#projectForm')[0].reset();
+                        
+                        // Show success message
+                        showAlert('success', `Project "${response.name}" created successfully!`);
+                    },
+                    error: function(xhr) {
+                        showAlert('danger', xhr.responseJSON?.message || 'Error creating project');
+                    }
+                });
+            });
+
+            // Handle company selection
+            $('select[name="company"]').on('change', function() {
+                const companyId = $(this).val();
+                const projectSelect = $('select[name="project"]');
+                
+                // Filter projects based on selected company
+                projectSelect.val(null).trigger('change');
+                
+                if (companyId) {
+                    projectSelect.find('option').each(function() {
+                        const $option = $(this);
+                        const projectCompanyId = $option.data('company-id');
+                        
+                        if (!projectCompanyId || projectCompanyId == companyId) {
+                            $option.show();
+                        } else {
+                            $option.hide();
+                        }
+                    });
+                } else {
+                    projectSelect.find('option').show();
+                }
+            });
+
+            // Handle project selection
+            $('select[name="project"]').on('change', function() {
+                const projectId = $(this).val();
+                const startButton = $('#startTimerBtn');
+                startButton.prop('disabled', !projectId);
+            });
+
+            // Reset form when modal is closed
+            $('#timerModal').on('hidden.bs.modal', function() {
+                $('#timerForm').trigger('reset');
+                $('select[name="project"]').find('option').show();
+                $('#startTimerBtn').prop('disabled', false);
+                $('.select2').val(null).trigger('change');
+            });
+
+            // Handle company form submission
+            $('#companyForm').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        // Add new company to company select dropdowns
+                        const newOption = new Option(response.name, response.id, true, true);
+                        $('select[name="company"]').append(newOption).trigger('change');
+                        
+                        // Close modal and reset form
+                        $('#companyModal').modal('hide');
+                        $('#companyForm')[0].reset();
+                        
+                        // Show success message
+                        showAlert('success', `Company "${response.name}" created successfully!`);
+                    },
+                    error: function(xhr) {
+                        showAlert('danger', xhr.responseJSON?.message || 'Error creating company');
+                    }
+                });
+            });
+
+            // Handle tag form submission
+            $('#tagForm').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        // Add new tag to tag select
+                        const newOption = new Option(response.name, response.id, true, true);
+                        $('select[name="tags"]').append(newOption).trigger('change');
+                        
+                        // Close modal and reset form
+                        $('#tagModal').modal('hide');
+                        $('#tagForm')[0].reset();
+                        
+                        // Show success message
+                        showAlert('success', `Tag "${response.name}" created successfully!`);
+                    },
+                    error: function(xhr) {
+                        showAlert('danger', xhr.responseJSON?.message || 'Error creating tag');
+                    }
+                });
+            });
+
+            // Reset forms when modals are closed
+            $('.modal').on('hidden.bs.modal', function() {
+                $(this).find('form').trigger('reset');
+            });
+
+            // Handle "Add New Project" button click
+            $('#addProjectBtn').on('click', function(e) {
+                e.preventDefault();
+                const companyId = $('select[name="company"]').val();
+                if (!companyId) {
+                    showAlert('warning', 'Please select a company first');
+                    return;
+                }
+                $('#projectCompanyId').val(companyId);
+                $('#projectModal').modal('show');
+            });
+
+            // Initialize Select2 for project modal
+            $('#projectModal select').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#projectModal')
+            });
         });
+
+        // Helper function to show alerts
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            const alertContainer = $('<div>').html(alertHtml);
+            $('.container').first().prepend(alertContainer);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                alertContainer.find('.alert').alert('close');
+            }, 5000);
+        }
+
+        function confirmDelete(deleteUrl) {
+            const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            document.getElementById('confirmDeleteBtn').href = deleteUrl;
+            modal.show();
+        }
     </script>
 </body>
 </html> 
