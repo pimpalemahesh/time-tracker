@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.db.models import Sum, Count, F, ExpressionWrapper, fields, FloatField
 from django.db.models.functions import TruncDate, ExtractSecond
 from django.db.models import Case, When
+from django.views.decorators.http import require_http_methods
 
 # Create your views here.
 
@@ -81,24 +82,45 @@ def start_timer(request):
     if request.method == 'POST':
         form = TimeEntryForm(request.POST)
         if form.is_valid():
+            # Check if there's already a running timer for this company/project
+            running_timer = TimeEntry.objects.filter(
+                company=form.cleaned_data['company'],
+                project=form.cleaned_data['project'],
+                end_time__isnull=True
+            ).first()
+            
+            if running_timer:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'A timer is already running for this company and project. Please stop the current timer first.'
+                })
+            
             try:
-                time_entry = TimeEntry.objects.create(
-                    company=form.cleaned_data['company'],
-                    project=form.cleaned_data['project'],
-                    description=form.cleaned_data['description'],
-                    start_time=timezone.now()
-                )
-                # Add tags
-                time_entry.tags.set(form.cleaned_data['tags'])
-                messages.success(request, 'Timer started successfully!')
+                entry = form.save(commit=False)
+                entry.start_time = timezone.now()
+                entry.break_reason = None
+                entry.save()
+                form.save_m2m()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Timer started successfully'
+                })
             except Exception as e:
-                messages.error(request, str(e))
+                return JsonResponse({
+                    'success': False,
+                    'message': str(e)
+                })
         else:
-            for field, errors in form.errors.items():
-                field_name = field.replace('_', ' ').title()
-                for error in errors:
-                    messages.error(request, f"{field_name}: {error}")
-    return redirect('dashboard')
+            return JsonResponse({
+                'success': False,
+                'message': 'Please fill in all required fields'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method'
+    })
 
 def stop_timer(request, entry_id):
     try:
@@ -169,14 +191,25 @@ def add_tag(request):
             }, status=400)
     return redirect('dashboard')
 
+@require_http_methods(["POST"])
 def delete_entry(request, entry_id):
     try:
         entry = TimeEntry.objects.get(id=entry_id)
         entry.delete()
-        messages.success(request, 'Time entry deleted successfully.')
+        return JsonResponse({
+            'success': True,
+            'message': 'Entry deleted successfully'
+        })
     except TimeEntry.DoesNotExist:
-        messages.error(request, 'Time entry not found.')
-    return redirect('dashboard')
+        return JsonResponse({
+            'success': False,
+            'message': 'Entry not found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
 
 def clear_entries(request):
     TimeEntry.objects.all().delete()

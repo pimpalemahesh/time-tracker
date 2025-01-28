@@ -1,0 +1,55 @@
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th style="width: 15%">Date & Time</th>
+                <th style="width: 15%">Company</th>
+                <th style="width: 15%">Project</th>
+                <th style="width: 20%">Description</th>
+                <th style="width: 15%">Tags</th>
+                <th style="width: 10%">Duration</th>
+                <th style="width: 10%">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries_with_breaks %}
+                {% if entry.type == 'time' %}
+                    <tr class="time-entry">
+                        <td>{{ entry.start_time|date:"Y-m-d H:i" }}</td>
+                        <td>{{ entry.company.name }}</td>
+                        <td>{{ entry.project.name }}</td>
+                        <td>{{ entry.description }}</td>
+                        <td>
+                            {% for tag in entry.tags.all %}
+                                <span class="badge bg-secondary">{{ tag.name }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if not entry.end_time %}
+                                <span class="running-timer" data-start-time="{{ entry.start_time|date:'c' }}">
+                                    {{ entry.get_duration_display }}
+                                </span>
+                            {% else %}
+                                {{ entry.get_duration_display }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not entry.end_time %}
+                                <button class="btn btn-sm btn-danger stop-timer" data-entry-id="{{ entry.id }}">
+                                    <i class="fas fa-stop"></i>
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr class="break-entry bg-light">
+                        <td colspan="7" class="text-center text-muted">
+                            <i class="fas fa-coffee me-2"></i>
+                            Break: {{ entry.get_duration_display }}
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div> 
