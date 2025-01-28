@@ -19,8 +19,7 @@ def dashboard(request):
     project_id = request.GET.get('project', '')
     tag_id = request.GET.get('tag', '')
     date_range = request.GET.get('date_range', 'all')
-
-    print(f"Filters: company={company_id}, project={project_id}, tag={tag_id}, date_range={date_range}")  # Debug print
+    show_active = request.GET.get('show_active', '')
 
     # Base queryset
     time_entries = TimeEntry.objects.all().order_by('-start_time')
@@ -34,6 +33,10 @@ def dashboard(request):
     
     if tag_id and tag_id.strip() and tag_id.isdigit():
         time_entries = time_entries.filter(tags__id=int(tag_id))
+
+    # Active timer filter
+    if show_active == 'true':
+        time_entries = time_entries.filter(end_time__isnull=True)
 
     # Date range filter
     today = timezone.now().date()
@@ -49,16 +52,14 @@ def dashboard(request):
                 start_time__month=today.month
             )
 
-    # Check if any filters are active (only if they have actual values)
+    # Check if any filters are active
     has_active_filters = any([
         company_id and company_id.strip() and company_id.isdigit(),
         project_id and project_id.strip() and project_id.isdigit(),
         tag_id and tag_id.strip() and tag_id.isdigit(),
-        date_range and date_range != 'all'
+        date_range and date_range != 'all',
+        show_active == 'true'
     ])
-
-    print(f"Has active filters: {has_active_filters}")  # Debug print
-    print(f"Number of entries: {time_entries.count()}")  # Debug print
 
     context = {
         'time_entries': time_entries,
@@ -70,6 +71,7 @@ def dashboard(request):
         'selected_project': project_id if project_id and project_id.isdigit() else '',
         'selected_tag': tag_id if tag_id and tag_id.isdigit() else '',
         'selected_date_range': date_range if date_range != 'all' else '',
+        'show_active': show_active == 'true',
         'has_active_filters': has_active_filters,
     }
     

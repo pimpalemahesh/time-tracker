@@ -56,7 +56,7 @@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form method="GET" class="row g-3 align-items-end" id="filterForm">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Company</label>
                     <select name="company" class="form-select select2">
                         <option value="">All Companies</option>
@@ -67,7 +67,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Project</label>
                     <select name="project" class="form-select select2">
                         <option value="">All Projects</option>
@@ -78,7 +78,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Tag</label>
                     <select name="tag" class="form-select select2">
                         <option value="">All Tags</option>
@@ -98,7 +98,14 @@
                         <option value="all" {% if selected_date_range == 'all' %}selected{% endif %}>All Time</option>
                     </select>
                 </div>
-                <div class="col-md-1 d-flex gap-2">
+                <div class="col-md-2">
+                    <label class="form-label">Timer Status</label>
+                    <select name="show_active" class="form-select">
+                        <option value="">All Timers</option>
+                        <option value="true" {% if show_active %}selected{% endif %}>Active Only</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary" title="Apply Filters">
                         <i class="fas fa-filter"></i>
                     </button>
