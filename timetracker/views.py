@@ -14,28 +14,65 @@ from django.db.models import Case, When
 # Create your views here.
 
 def dashboard(request):
-    companies = Company.objects.all()
-    projects = Project.objects.all()
-    tags = Tag.objects.all()
-    selected_company = request.GET.get('company')
+    # Get filter parameters with proper type conversion
+    company_id = request.GET.get('company', '')
+    project_id = request.GET.get('project', '')
+    tag_id = request.GET.get('tag', '')
+    date_range = request.GET.get('date_range', 'all')
+
+    print(f"Filters: company={company_id}, project={project_id}, tag={tag_id}, date_range={date_range}")  # Debug print
+
+    # Base queryset
+    time_entries = TimeEntry.objects.all().order_by('-start_time')
+
+    # Apply filters only if they have actual values
+    if company_id and company_id.strip() and company_id.isdigit():
+        time_entries = time_entries.filter(company_id=int(company_id))
     
-    if selected_company:
-        time_entries = TimeEntry.objects.filter(
-            company_id=selected_company,
-        ).order_by('-start_time')
-    else:
-        time_entries = TimeEntry.objects.all().order_by('-start_time')
+    if project_id and project_id.strip() and project_id.isdigit():
+        time_entries = time_entries.filter(project_id=int(project_id))
     
+    if tag_id and tag_id.strip() and tag_id.isdigit():
+        time_entries = time_entries.filter(tags__id=int(tag_id))
+
+    # Date range filter
+    today = timezone.now().date()
+    if date_range and date_range != 'all':
+        if date_range == 'today':
+            time_entries = time_entries.filter(start_time__date=today)
+        elif date_range == 'week':
+            week_start = today - timedelta(days=today.weekday())
+            time_entries = time_entries.filter(start_time__date__gte=week_start)
+        elif date_range == 'month':
+            time_entries = time_entries.filter(
+                start_time__year=today.year,
+                start_time__month=today.month
+            )
+
+    # Check if any filters are active (only if they have actual values)
+    has_active_filters = any([
+        company_id and company_id.strip() and company_id.isdigit(),
+        project_id and project_id.strip() and project_id.isdigit(),
+        tag_id and tag_id.strip() and tag_id.isdigit(),
+        date_range and date_range != 'all'
+    ])
+
+    print(f"Has active filters: {has_active_filters}")  # Debug print
+    print(f"Number of entries: {time_entries.count()}")  # Debug print
+
     context = {
-        'companies': companies,
-        'projects': projects,
-        'tags': tags,
-        'selected_company': selected_company,
         'time_entries': time_entries,
+        'companies': Company.objects.all(),
+        'projects': Project.objects.all(),
+        'tags': Tag.objects.all(),
         'form': TimeEntryForm(),
-        'project_form': ProjectForm(),
-        'company_form': CompanyForm(),
+        'selected_company': company_id if company_id and company_id.isdigit() else '',
+        'selected_project': project_id if project_id and project_id.isdigit() else '',
+        'selected_tag': tag_id if tag_id and tag_id.isdigit() else '',
+        'selected_date_range': date_range if date_range != 'all' else '',
+        'has_active_filters': has_active_filters,
     }
+    
     return render(request, 'timetracker/dashboard.html', context)
 
 def start_timer(request):

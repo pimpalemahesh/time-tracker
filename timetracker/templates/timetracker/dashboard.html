@@ -52,6 +52,66 @@
         </div>
     </div>
 
+    <!-- Add this after the header section and before the time entries table -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end" id="filterForm">
+                <div class="col-md-3">
+                    <label class="form-label">Company</label>
+                    <select name="company" class="form-select select2">
+                        <option value="">All Companies</option>
+                        {% for company in companies %}
+                            <option value="{{ company.id }}" {% if selected_company == company.id|stringformat:"s" %}selected{% endif %}>
+                                {{ company.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Project</label>
+                    <select name="project" class="form-select select2">
+                        <option value="">All Projects</option>
+                        {% for project in projects %}
+                            <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"s" %}selected{% endif %}>
+                                {{ project.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tag</label>
+                    <select name="tag" class="form-select select2">
+                        <option value="">All Tags</option>
+                        {% for tag in tags %}
+                            <option value="{{ tag.id }}" {% if selected_tag == tag.id|stringformat:"s" %}selected{% endif %}>
+                                {{ tag.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date Range</label>
+                    <select name="date_range" class="form-select">
+                        <option value="today" {% if selected_date_range == 'today' %}selected{% endif %}>Today</option>
+                        <option value="week" {% if selected_date_range == 'week' %}selected{% endif %}>This Week</option>
+                        <option value="month" {% if selected_date_range == 'month' %}selected{% endif %}>This Month</option>
+                        <option value="all" {% if selected_date_range == 'all' %}selected{% endif %}>All Time</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" title="Apply Filters">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    {% if has_active_filters %}
+                    <button type="button" class="btn btn-outline-secondary" id="clearFilters" title="Clear Filters">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Timer History Table -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -454,4 +514,18 @@
         letter-spacing: 0.5px;
     }
 </style>
+
+<!-- At the bottom of your template, just before closing body tag -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Clear filters
+        $('#clearFilters').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Redirect to dashboard
+            window.location.href = "{% url 'dashboard' %}";
+        });
+    });
+</script>
 {% endblock %} 
